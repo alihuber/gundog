@@ -8,7 +8,7 @@ module Gundog
       exchange:    "gundog",
       prefetch:    1,
       exchange_options: { type: :direct, durable: true, auto_delete: false },
-      queue_options: { exclusive: false, ack: true }
+      queue_options: { exclusive: false, ack: true, durable: true }
     }.freeze
 
 
