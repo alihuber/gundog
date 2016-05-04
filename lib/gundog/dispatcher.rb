@@ -10,24 +10,43 @@ module Gundog
       opts        = config[:opts]
 
       queue_names.each do |name|
+        retry_queue_name = name + "_retry"
         connection  = Bunny.new(opts[:amqp], vhost: opts[:vhost],
                                 heartbeat: opts[:heartbeat])
         puts "starting #{connection.inspect} for #{name}"
         begin
           connection.start
           channel     = connection.create_channel
-          exchange    = channel.exchange(opts[:exchange], opts[:exchange_options])
-          queue       = channel.queue(name, opts[:queue_options])
-          queue.bind(exchange, :routing_key => name)
-          consumer    = build_consumer_class.new(channel, queue)
-          queue.subscribe_with(consumer)
-          consumer.on_delivery() do |delivery_info, metadata, payload|
-            # spawn new worker instance in separate thread with payload
-            "#{name}_worker".camelize.constantize.new.async.work(payload)
+          exchange    =
+            channel.exchange(opts[:exchange], opts[:exchange_options])
+
+          worker_queue       = channel.queue(name, opts[:queue_options])
+          worker_queue.bind(exchange, :routing_key => name)
+          # channel, queue, comsumer_tag, no_ack, exclusive, opts
+          work_consumer      =
+            build_consumer_class.new(channel, worker_queue, nil, false)
+          worker_queue.subscribe_with(work_consumer)
+
+          retry_queue        =
+            channel.queue(retry_queue_name, opts[:queue_options])
+          retry_queue.bind(exchange, :routing_key => retry_queue_name)
+          retry_consumer     =
+            build_consumer_class.new(channel, retry_queue, nil, false)
+          retry_queue.subscribe_with(retry_consumer)
+
+          work_consumer.on_delivery() do |delivery_info, metadata, payload|
+            work_actor = "#{name}_worker".camelize.constantize.new
+            work_actor.async.work(payload, delivery_info, channel)
           end
-        rescue Bunny::PreconditionFailed => e
+
+          retry_consumer.on_delivery() do |delivery_info, metadata, payload|
+            retry_actor = Gundog::RetryWorker.new(opts[:retry_timeout])
+            retry_actor.async.call(payload, delivery_info, channel)
+          end
+        rescue Bunny::PreconditionFailed, Bunny::ChannelAlreadyClosed => e
           puts "BUNNY EXCEPTION: #{e.message}"
-          puts "Please make sure queues are empty and delete them manually."
+          puts "Please make sure queues are "\
+               "empty and delete them manually if necessary."
           parent_process_pid = %x{ps -p #{Process.pid} -o ppid=}.strip
           Process.kill "TERM", parent_process_pid.to_i
         end

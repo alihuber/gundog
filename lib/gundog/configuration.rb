@@ -7,6 +7,8 @@ module Gundog
       heartbeat:   2,
       exchange:    "gundog",
       prefetch:    1,
+      # seconds
+      retry_timeout: 5,
       exchange_options: { type: :direct, durable: true, auto_delete: false },
       queue_options: { exclusive: false, ack: true, durable: true }
     }.freeze

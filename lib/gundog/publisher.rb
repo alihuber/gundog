@@ -2,11 +2,8 @@ module Gundog
   class Publisher
 
     def self.publish(msg, opts = {})
-      @mutex = Mutex.new
       @opts  = Gundog::CONFIG.options.merge(opts)
-      @mutex.synchronize do
-        ensure_connection!
-      end
+      ensure_connection!
       to_queue = @opts.delete(:to_queue)
       @opts[:routing_key] ||= to_queue
       puts "publishing #{msg} to queue #{@opts[:routing_key]}"

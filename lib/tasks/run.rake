@@ -1,5 +1,6 @@
 require "gundog"
 require "gundog/dispatcher"
+require "gundog/retry_worker"
 require "gundog/runner"
 
 task :environment
