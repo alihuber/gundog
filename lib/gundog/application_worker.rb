@@ -10,7 +10,7 @@ module Gundog
 
     attr_reader :json
 
-    def work(args = '{}', delivery_info, channel)
+    def work(args = '{}', metadata, delivery_info, channel)
       log_start(args)
 
       begin
@@ -27,11 +27,19 @@ module Gundog
           end
         end
       rescue Exception => ex
-        # false == no requeueing by rabbitmq itself
-        channel.reject(delivery_info.delivery_tag, false)
+        # 'Should all unacknowledged messages up to this be acknowledged as well?'
+        # = false
+        channel.acknowledge(delivery_info.delivery_tag, false)
         log_exception(ex)
         queue_name = self.class.to_s.underscore.gsub("worker", "retry")
-        Gundog::Publisher.publish(args, to_queue: queue_name)
+        if metadata[:headers]
+          Gundog::Publisher
+            .publish(args, to_queue: queue_name, headers: metadata[:headers])
+        else
+          Gundog::Publisher.publish(args, to_queue: queue_name,
+                                          headers: {retry_count: 1})
+        end
+        self.terminate
         return
       end
 

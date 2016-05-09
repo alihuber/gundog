@@ -8,7 +8,8 @@ module Gundog
       exchange:    "gundog",
       prefetch:    1,
       # seconds
-      retry_timeout: 5,
+      retry_timeout: 10,
+      max_retry: 3,
       exchange_options: { type: :direct, durable: true, auto_delete: false },
       queue_options: { exclusive: false, ack: true, durable: true }
     }.freeze

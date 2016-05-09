@@ -11,13 +11,15 @@ module Gundog
 
       queue_names.each do |name|
         retry_queue_name = name + "_retry"
-        connection  = Bunny.new(opts[:amqp], vhost: opts[:vhost],
-                                heartbeat: opts[:heartbeat])
+        error_queue_name = name + "_error"
+
+        connection       = Bunny.new(opts[:amqp], vhost: opts[:vhost],
+                                     heartbeat: opts[:heartbeat])
         puts "starting #{connection.inspect} for #{name}"
         begin
           connection.start
-          channel     = connection.create_channel
-          exchange    =
+          channel            = connection.create_channel
+          exchange           =
             channel.exchange(opts[:exchange], opts[:exchange_options])
 
           worker_queue       = channel.queue(name, opts[:queue_options])
@@ -34,14 +36,19 @@ module Gundog
             build_consumer_class.new(channel, retry_queue, nil, false)
           retry_queue.subscribe_with(retry_consumer)
 
+          error_queue        =
+            channel.queue(error_queue_name, opts[:queue_options])
+          error_queue.bind(exchange, :routing_key => error_queue_name)
+
           work_consumer.on_delivery() do |delivery_info, metadata, payload|
-            work_actor = "#{name}_worker".camelize.constantize.new
-            work_actor.async.work(payload, delivery_info, channel)
+            work_actor       = "#{name}_worker".camelize.constantize.new
+            work_actor.async.work(payload, metadata, delivery_info, channel)
           end
 
           retry_consumer.on_delivery() do |delivery_info, metadata, payload|
-            retry_actor = Gundog::RetryWorker.new(opts[:retry_timeout])
-            retry_actor.async.call(payload, delivery_info, channel)
+            retry_actor      =
+              Gundog::RetryWorker.new(opts[:retry_timeout], opts[:max_retry])
+            retry_actor.async.call(payload, metadata, delivery_info, channel)
           end
         rescue Bunny::PreconditionFailed, Bunny::ChannelAlreadyClosed => e
           puts "BUNNY EXCEPTION: #{e.message}"
