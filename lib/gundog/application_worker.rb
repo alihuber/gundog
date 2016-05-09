@@ -52,18 +52,18 @@ module Gundog
     private
 
     def log_exception(ex)
-      puts "*** EXCEPTION #{self.class.name} ***"
+      puts "#{Time.zone.now.to_s}  *** EXCEPTION #{self.class.name} ***"
       puts('=' * 80)
       puts ex.message
       puts ex.backtrace
     end
 
     def log_start(args)
-      puts "*** START #{self.class.name} with #{args} ***"
+      puts "#{Time.zone.now.to_s}  *** START #{self.class.name} with #{args} ***"
     end
 
     def log_success
-      puts "*** SUCCESS #{self.class.name} ***"
+      puts "#{Time.zone.now.to_s}  *** SUCCESS #{self.class.name} ***"
     end
 
     def parse!(args)

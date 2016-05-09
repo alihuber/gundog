@@ -6,7 +6,7 @@ module Gundog
       ensure_connection!
       to_queue = @opts.delete(:to_queue)
       @opts[:routing_key] ||= to_queue
-      puts "publishing #{msg} to queue #{@opts[:routing_key]}"
+      puts "#{Time.zone.now.to_s}  publishing #{msg} to queue #{@opts[:routing_key]}"
       @exchange.publish(msg, @opts)
       @connection.close
     end

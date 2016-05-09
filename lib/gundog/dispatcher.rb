@@ -15,7 +15,7 @@ module Gundog
 
         connection       = Bunny.new(opts[:amqp], vhost: opts[:vhost],
                                      heartbeat: opts[:heartbeat])
-        puts "starting #{connection.inspect} for #{name}"
+        puts "#{Time.zone.now.to_s}  starting #{connection.inspect} for #{name}"
         begin
           connection.start
           channel            = connection.create_channel
