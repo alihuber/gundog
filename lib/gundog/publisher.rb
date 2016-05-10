@@ -1,13 +1,14 @@
 module Gundog
   class Publisher
 
-    def self.publish(msg, opts = {})
+    def self.publish(message, opts = {})
       @opts  = Gundog::CONFIG.options.merge(opts)
       ensure_connection!
       to_queue = @opts.delete(:to_queue)
       @opts[:routing_key] ||= to_queue
-      puts "#{Time.zone.now.to_s}  publishing #{msg} to queue #{@opts[:routing_key]}"
-      @exchange.publish(msg, @opts)
+      puts "#{Time.zone.now.to_s}  "\
+        "publishing #{message} to queue #{@opts[:routing_key]}"
+      @exchange.publish(message, @opts)
       @connection.close
     end
 
@@ -22,11 +23,6 @@ module Gundog
                                       @opts[:exchange_options])
     end
     private_class_method :ensure_connection!
-
-    def self.connected?
-      @connection && @connection.connected?
-    end
-    private_class_method :connected?
 
   end
 end
