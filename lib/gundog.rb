@@ -1,6 +1,9 @@
-require "pry"
 require "bunny"
-require "celluloid/current"
+if ENV["TEST"]
+  require "celluloid/test"
+else
+  require "celluloid/current"
+end
 require "serverengine"
 
 require "gundog/version"
