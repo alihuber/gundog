@@ -6,10 +6,19 @@ describe Gundog::Dispatcher do
 
   # Dispatcher is a module started by serverengine, has to be included
 
-  let(:queue_names)   { ["queue_1", "queue_2"] }
-  let(:opts)          {
-    Gundog::CONFIG.options.merge(Hash[amqp: "localhost:5672", vhost: "test"]) }
-  let(:config)        { Hash[queue_names: queue_names, opts: opts] }
+  let(:config)        { Hash[:queue_names=>["queue_1", "queue_2"],
+                             :options=>
+                               {:heartbeat=>2,
+                               :exchange=>"gundog",
+                               :prefetch=>100,
+                               :retry_timeout=>10,
+                               :max_retry=>3,
+                               :exchange_options=>
+                               {:type=>:direct, :durable=>true,
+                                :auto_delete=>false},
+                               :queue_options=>
+                               {:exclusive=>false, :ack=>true, :durable=>true}}]
+  }
   let(:dispatcher)    { DispatcherClass.new }
   let(:queue_1)       { double("Queue1") }
   let(:queue_2)       { double("Queue2") }
@@ -18,6 +27,7 @@ describe Gundog::Dispatcher do
   let(:error_queue_1) { double("ErrorQueue1") }
   let(:error_queue_2) { double("ErrorQueue2") }
   let(:flag)          { double("StopFlag") }
+  let(:off_consumer)  { OpenStruct.new(cancel: true) }
 
   subject { dispatcher.run }
 
@@ -59,9 +69,13 @@ describe Gundog::Dispatcher do
 
     allow(queue_1).to receive(:subscribe_with)
     allow(queue_2).to receive(:subscribe_with)
+    allow(queue_1).to receive(:subscribe).and_return(off_consumer)
+    allow(queue_2).to receive(:subscribe).and_return(off_consumer)
 
     allow(retry_queue_1).to receive(:subscribe_with)
     allow(retry_queue_2).to receive(:subscribe_with)
+    allow(retry_queue_1).to receive(:subscribe).and_return(off_consumer)
+    allow(retry_queue_2).to receive(:subscribe).and_return(off_consumer)
   end
 
 
