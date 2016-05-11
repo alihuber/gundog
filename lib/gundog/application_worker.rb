@@ -33,11 +33,11 @@ module Gundog
         log_exception(ex)
         queue_name = self.class.to_s.underscore.gsub("worker", "retry")
         if metadata[:headers]
-          Gundog::Publisher
+          Gundog::Publisher.new
             .publish(args, to_queue: queue_name, headers: metadata[:headers])
         else
-          Gundog::Publisher.publish(args, to_queue: queue_name,
-                                          headers: {retry_count: 1})
+          Gundog::Publisher.new.publish(args, to_queue: queue_name,
+                                        headers: {retry_count: 1})
         end
         self.terminate
         return
@@ -77,7 +77,7 @@ module Gundog
     end
 
     def publish_to(queue, data)
-      Gundog::Publisher.publish(data.to_json, to_queue: queue)
+      Gundog::Publisher.new.publish(data.to_json, to_queue: queue)
     end
 
     def in_transaction?

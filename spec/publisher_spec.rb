@@ -3,12 +3,12 @@ require "spec_helper"
 describe Gundog::Publisher do
   # include_context :bunny_connection
 
-  let(:publisher) { described_class }
+  let(:publisher)   { described_class }
   let!(:bunny_mock) { double(::Bunny.new) }
   let!(:channel)    { double("Channel") }
   let!(:exchange)   { double("Exchange") }
 
-  subject { publisher.publish("bar".to_json) }
+  subject { publisher.new.publish("bar".to_json) }
 
   before do
     allow_message_expectations_on_nil

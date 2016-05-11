@@ -1,6 +1,6 @@
 shared_context :bunny_connection do
   let!(:channel)    { double("Channel") }
-  let!(:publisher)  { double ::Gundog::Publisher }
+  let!(:publisher)  { instance_double ::Gundog::Publisher }
   let!(:exchange)   { double("Exchange") }
   let!(:bunny_mock) { double(::Bunny.new) }
 

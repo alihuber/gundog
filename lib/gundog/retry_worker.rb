@@ -19,7 +19,7 @@ module Gundog
       if metadata[:headers]["retry_count"] > @max_retry
         puts "#{Time.zone.now.to_s}  *** Moving #{args} into "\
           "#{queue_name}_error queue after #{@max_retry} times ***"
-        Gundog::Publisher.publish(args, to_queue: "#{queue_name}_error")
+        Gundog::Publisher.new.publish(args, to_queue: "#{queue_name}_error")
         # requeue automatically = false
         channel.reject(delivery_info.delivery_tag, false)
         self.terminate
@@ -27,8 +27,8 @@ module Gundog
         count = metadata[:headers]["retry_count"]
         puts "#{Time.zone.now.to_s}  *** Publishing #{args} into #{queue_name} "\
           "after #{@timeout} seconds for the #{count}. time ***"
-        Gundog::Publisher.publish(args, to_queue: queue_name,
-                                        headers: {retry_count: count + 1})
+        Gundog::Publisher.new.publish(args, to_queue: queue_name,
+                                      headers: {retry_count: count + 1})
         channel.acknowledge(delivery_info.delivery_tag, false)
         self.terminate
       end
