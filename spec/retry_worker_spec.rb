@@ -30,7 +30,7 @@ describe Gundog::RetryWorker do
       sleep(1)
       expect(exchange).to have_received(:publish)
         .with("\"foo\"", {:heartbeat=>2, :exchange=>"gundog",
-                          :prefetch=>1, :retry_timeout=>10, :max_retry=>3,
+                          :prefetch=>100, :retry_timeout=>10, :max_retry=>3,
                           :exchange_options=>{:type=>:direct, :durable=>true,
                                               :auto_delete=>false},
                           :queue_options=>{:exclusive=>false, :ack=>true,
@@ -52,7 +52,7 @@ describe Gundog::RetryWorker do
       sleep(1)
       expect(exchange).to have_received(:publish)
         .with("\"foo\"", {:heartbeat=>2, :exchange=>"gundog",
-                          :prefetch=>1, :retry_timeout=>10, :max_retry=>3,
+                          :prefetch=>100, :retry_timeout=>10, :max_retry=>3,
                           :exchange_options=>{:type=>:direct, :durable=>true,
                                               :auto_delete=>false},
                           :queue_options=>{:exclusive=>false, :ack=>true,

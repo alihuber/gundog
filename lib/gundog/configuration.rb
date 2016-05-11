@@ -6,7 +6,7 @@ module Gundog
     CONFIG_DEFAULTS = {
       heartbeat:   2,
       exchange:    "gundog",
-      prefetch:    1,
+      prefetch:    100,
       # seconds
       retry_timeout: 10,
       max_retry: 3,

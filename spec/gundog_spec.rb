@@ -16,7 +16,7 @@ describe Gundog do
     expect(Gundog.setup(amqp: "localhost:15672", vhost: "test")).to eq(
       Hash[:heartbeat=>2,
            :exchange=>"gundog",
-           :prefetch=>1,
+           :prefetch=>100,
            :retry_timeout=>10,
            :max_retry=>3,
            :exchange_options=> {:type=>:direct,

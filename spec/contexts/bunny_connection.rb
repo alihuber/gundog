@@ -14,6 +14,7 @@ shared_context :bunny_connection do
     allow(bunny_mock).to receive(:create_channel).and_return channel
 
     allow(channel).to receive(:acknowledge)
+    allow(channel).to receive(:prefetch)
     allow(channel).to receive(:reject)
     allow(channel).to receive(:exchange)
       .with("gundog", {:type=>:direct, :durable=>true, :auto_delete=>false})
