@@ -8,7 +8,7 @@ module Gundog
       se = ServerEngine.create(nil, Gundog::Dispatcher, {
         daemonize: false,
         worker_type: "process",
-        workers: 1,
+        workers: @options[:workers] || 1,
         queue_names: queue_names,
         options: @options
       })
