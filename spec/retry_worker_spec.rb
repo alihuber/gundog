@@ -15,9 +15,9 @@ describe Gundog::RetryWorker do
                                  :priority=>0].with_indifferent_access }
   let(:delivery_info)     {
     OpenStruct.new(consumer_tag: "amq.ctag-ATWR0yHmT_c8A",
-                   routing_key: "test_queue_retry",
-                   delivery_tag:  {:exchange=>"gundog",
-                                   :routing_key=>"test_queue_retry"}) }
+                   routing_key:  "test_queue_retry",
+                   delivery_tag: {:exchange=>"gundog",
+                                  :routing_key=>"test_queue_retry"}) }
 
 
   context "max retry limit is not exceeded" do

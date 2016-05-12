@@ -10,7 +10,7 @@ module Gundog
 
     attr_reader :json
 
-    def work(args = '{}', metadata, delivery_info, channel)
+    def work(args = "{}", metadata, delivery_info, channel)
       log_start(args)
 
       begin
