@@ -6,7 +6,9 @@ module Gundog
 
       puts "Starting message dispatching for queues: #{queue_names}"
       se = ServerEngine.create(nil, Gundog::Dispatcher, {
-        daemonize: false,
+        daemonize: @options[:daemonize],
+        log: @options[:log],
+        pid_path: @options[:pid_path],
         worker_type: "process",
         workers: @options[:workers] || 1,
         queue_names: queue_names,

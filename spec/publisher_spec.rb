@@ -31,7 +31,8 @@ describe Gundog::Publisher do
     expect(exchange).to have_received(:publish)
       .with("\"bar\"", {:heartbeat=>2, :exchange=>"gundog",
                         :prefetch=>100, :retry_timeout=>10, :max_retry=>3,
-                        :workers=>1,
+                        :workers=>1, :daemonize=>false, :log=>STDOUT,
+                        :pid_path=>"gundog.pid",
                         :exchange_options=>{:type=>:direct, :durable=>true,
                                             :auto_delete=>false},
                         :queue_options=>{:exclusive=>false, :ack=>true,
