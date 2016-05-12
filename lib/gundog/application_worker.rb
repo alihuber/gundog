@@ -31,7 +31,7 @@ module Gundog
         # = false
         channel.acknowledge(delivery_info.delivery_tag, false)
         log_exception(ex)
-        queue_name = self.class.to_s.underscore.gsub("worker", "retry")
+        queue_name = delivery_info.routing_key + "_retry"
         if metadata[:headers]
           Gundog::Publisher.new
             .publish(args, to_queue: queue_name, headers: metadata[:headers])
