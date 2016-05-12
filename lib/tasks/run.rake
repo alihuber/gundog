@@ -12,11 +12,11 @@ namespace :gundog do
 
     ::Rails.application.eager_load!
 
-    queues = Rails.application.config_for(:queues)["queues"]
-    if queues.any?
-      Gundog::Runner.new(queues)
+    workers = Rails.application.config_for(:workers)["workers"]
+    if workers.any?
+      Gundog::Runner.new(workers)
     else
-      puts "No queue names given, aborting..."
+      puts "No worker names given, aborting..."
     end
   end
 end

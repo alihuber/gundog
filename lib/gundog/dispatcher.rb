@@ -6,17 +6,19 @@ module Gundog
     end
 
     def run
-      queue_names = config[:queue_names]
-      options     = config[:options]
-      ack         = options[:queue_options][:ack]
+      worker_names = config[:worker_names]
+      options      = config[:options]
+      ack          = options[:queue_options][:ack]
 
-      queue_names.each do |name|
-        retry_queue_name = name + "_retry"
-        error_queue_name = name + "_error"
+      worker_names.each do |worker_name|
+        queue_name       = worker_name[0..worker_name.rindex("_")-1]
+        retry_queue_name = queue_name + "_retry"
+        error_queue_name = queue_name + "_error"
 
         connection       = Bunny.new(options[:amqp], vhost: options[:vhost],
                                      heartbeat: options[:heartbeat])
-        puts "#{Time.zone.now.to_s}  starting #{connection.inspect} for #{name}"
+        puts "#{Time.zone.now.to_s}  starting #{connection.inspect} "\
+          "for #{worker_name}"
 
         begin
           connection.start
@@ -26,21 +28,21 @@ module Gundog
             channel.exchange(options[:exchange], options[:exchange_options])
 
 
-          worker_queue       = channel.queue(name, options[:queue_options])
-          worker_queue.bind(exchange, :routing_key => name)
+          worker_queue       = channel.queue(queue_name, options[:queue_options])
+          worker_queue.bind(exchange, :routing_key => queue_name)
           # build long lived consumer to listen on deliveries
           # channel, queue, comsumer_tag, no_ack, exclusive, opts
           work_consumer      = build_consumer_class
-            .new(channel, worker_queue, "#{name}-consumer", false)
+            .new(channel, worker_queue, "#{queue_name}-consumer", false)
           # subscribe ephemeral consumer to work off piled up messages
           off_work_consumer  = worker_queue
             .subscribe(block: false, manual_ack: ack) do |info, meta, message|
-            work_actor       = "#{name}_worker".camelize.constantize.new
+            work_actor       = worker_name.camelize.constantize.new
             work_actor.async.work(message, meta, info, channel)
           end
           worker_queue.subscribe_with(work_consumer)
           work_consumer.on_delivery() do |delivery_info, metadata, payload|
-            work_actor       = "#{name}_worker".camelize.constantize.new
+            work_actor       = worker_name.camelize.constantize.new
             work_actor.async.work(payload, metadata, delivery_info, channel)
           end
 
@@ -53,7 +55,7 @@ module Gundog
                                      "#{retry_queue_name}-consumer", false)
           off_retry_consumer = retry_queue
             .subscribe(block: false, manual_ack: ack) do |info, meta, message|
-            retry_actor      = "#{name}_worker".camelize.constantize.new
+            retry_actor      = worker_name.camelize.constantize.new
             retry_actor.async.work(message, meta, info, channel)
           end
           retry_queue.subscribe_with(retry_consumer)

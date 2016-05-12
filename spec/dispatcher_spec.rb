@@ -6,7 +6,8 @@ describe Gundog::Dispatcher do
 
   # Dispatcher is a module started by serverengine, has to be included
 
-  let(:config)        { Hash[:queue_names=>["queue_1", "queue_2"],
+  let(:config)        { Hash[:worker_names=>["queue_1_worker",
+                                             "queue_2_workflow"],
                              :options=>
                                {:heartbeat=>2,
                                :exchange=>"gundog",
