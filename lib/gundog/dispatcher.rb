@@ -11,7 +11,7 @@ module Gundog
       ack          = options[:queue_options][:ack]
 
       worker_names.each do |worker_name|
-        queue_name       = worker_name[0..worker_name.rindex("_")-1]
+        queue_name       = worker_name + "_queue"
         retry_queue_name = queue_name + "_retry"
         error_queue_name = queue_name + "_error"
 

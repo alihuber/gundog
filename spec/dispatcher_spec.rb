@@ -39,34 +39,40 @@ describe Gundog::Dispatcher do
       .to receive(:wait_for_set).and_return ServerEngine::BlockingFlag.new.set!
 
     allow(channel).to receive(:queue)
-      .with("queue_1", {:exclusive=>false, :ack=>true, :durable=>true})
-      .and_return(queue_1)
+      .with("queue_1_worker_queue",
+            {:exclusive=>false, :ack=>true, :durable=>true}).and_return(queue_1)
     allow(channel).to receive(:queue)
-      .with("queue_2", {:exclusive=>false, :ack=>true, :durable=>true})
-      .and_return(queue_2)
+      .with("queue_2_workflow_queue",
+            {:exclusive=>false, :ack=>true, :durable=>true}).and_return(queue_2)
     allow(channel).to receive(:queue)
-      .with("queue_1_retry", {:exclusive=>false, :ack=>true, :durable=>true})
+      .with("queue_1_worker_queue_retry",
+            {:exclusive=>false, :ack=>true, :durable=>true})
       .and_return(retry_queue_1)
     allow(channel).to receive(:queue)
-      .with("queue_2_retry", {:exclusive=>false, :ack=>true, :durable=>true})
+      .with("queue_2_workflow_queue_retry",
+            {:exclusive=>false, :ack=>true, :durable=>true})
       .and_return(retry_queue_2)
     allow(channel).to receive(:queue)
-      .with("queue_1_error", {:exclusive=>false, :ack=>true, :durable=>true})
+      .with("queue_1_worker_queue_error",
+            {:exclusive=>false, :ack=>true, :durable=>true})
       .and_return(error_queue_1)
     allow(channel).to receive(:queue)
-      .with("queue_2_error", {:exclusive=>false, :ack=>true, :durable=>true})
+      .with("queue_2_workflow_queue_error",
+            {:exclusive=>false, :ack=>true, :durable=>true})
       .and_return(error_queue_2)
 
-    allow(queue_1).to receive(:bind).with(exchange, {:routing_key=>"queue_1"})
-    allow(queue_2).to receive(:bind).with(exchange, {:routing_key=>"queue_2"})
-    allow(retry_queue_1)
-      .to receive(:bind).with(exchange, {:routing_key=>"queue_1_retry"})
-    allow(retry_queue_2)
-      .to receive(:bind).with(exchange, {:routing_key=>"queue_2_retry"})
-    allow(error_queue_1)
-      .to receive(:bind).with(exchange, {:routing_key=>"queue_1_error"})
-    allow(error_queue_2)
-      .to receive(:bind).with(exchange, {:routing_key=>"queue_2_error"})
+    allow(queue_1).to receive(:bind)
+      .with(exchange, {:routing_key=>"queue_1_worker_queue"})
+    allow(queue_2).to receive(:bind)
+      .with(exchange, {:routing_key=>"queue_2_workflow_queue"})
+    allow(retry_queue_1).to receive(:bind)
+      .with(exchange, {:routing_key=>"queue_1_worker_queue_retry"})
+    allow(retry_queue_2).to receive(:bind)
+      .with(exchange, {:routing_key=>"queue_2_workflow_queue_retry"})
+    allow(error_queue_1).to receive(:bind)
+      .with(exchange, {:routing_key=>"queue_1_worker_queue_error"})
+    allow(error_queue_2).to receive(:bind)
+      .with(exchange, {:routing_key=>"queue_2_workflow_queue_error"})
 
     allow(queue_1).to receive(:subscribe_with)
     allow(queue_2).to receive(:subscribe_with)
@@ -82,18 +88,18 @@ describe Gundog::Dispatcher do
 
   it "sets up rabbitmq queues from queue name array" do
     subject
-    expect(queue_1)
-      .to have_received(:bind).with(exchange, {:routing_key=>"queue_1"})
-    expect(queue_2)
-      .to have_received(:bind).with(exchange, {:routing_key=>"queue_2"})
-    expect(retry_queue_1)
-      .to have_received(:bind).with(exchange, {:routing_key=>"queue_1_retry"})
-    expect(retry_queue_2)
-      .to have_received(:bind).with(exchange, {:routing_key=>"queue_2_retry"})
-    expect(error_queue_1)
-      .to have_received(:bind).with(exchange, {:routing_key=>"queue_1_error"})
-    expect(error_queue_2)
-      .to have_received(:bind).with(exchange, {:routing_key=>"queue_2_error"})
+    expect(queue_1).to have_received(:bind)
+      .with(exchange, {:routing_key=>"queue_1_worker_queue"})
+    expect(queue_2).to have_received(:bind)
+      .with(exchange, {:routing_key=>"queue_2_workflow_queue"})
+    expect(retry_queue_1).to have_received(:bind)
+      .with(exchange, {:routing_key=>"queue_1_worker_queue_retry"})
+    expect(retry_queue_2).to have_received(:bind)
+      .with(exchange, {:routing_key=>"queue_2_workflow_queue_retry"})
+    expect(error_queue_1).to have_received(:bind)
+      .with(exchange, {:routing_key=>"queue_1_worker_queue_error"})
+    expect(error_queue_2).to have_received(:bind)
+      .with(exchange, {:routing_key=>"queue_2_workflow_queue_error"})
 
     expect(queue_1).to have_received(:subscribe_with)
     expect(queue_2).to have_received(:subscribe_with)
@@ -102,7 +108,8 @@ describe Gundog::Dispatcher do
   end
 
   it "handles Bunny connection errors" do
-    allow(queue_1).to receive(:bind).with(exchange, {:routing_key=>"queue_1"})
+    allow(queue_1).to receive(:bind)
+      .with(exchange, {:routing_key=>"queue_1_worker_queue"})
       .and_raise(Bunny::PreconditionFailed.new("error", channel, true))
 
     subject
