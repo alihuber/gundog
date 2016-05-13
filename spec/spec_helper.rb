@@ -21,9 +21,6 @@ RSpec.configure do |config|
   config.before :each do
     Celluloid.boot
   end
-  config.before :each do
-    Celluloid.boot
-  end
 
   config.after :each do
     Celluloid.shutdown
