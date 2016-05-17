@@ -32,7 +32,9 @@ module Gundog
         channel.acknowledge(delivery_info.delivery_tag, false)
         log_exception(ex)
         queue_name = delivery_info.routing_key + "_retry"
-        if metadata[:headers]
+        # messages sent by RabbitMQ-UI will add metadata =
+        # {:headers=>{}, :delivery_mode=>1}
+        if metadata[:headers]&.any?
           Gundog::Publisher.new
             .publish(args, to_queue: queue_name, headers: metadata[:headers])
         else
