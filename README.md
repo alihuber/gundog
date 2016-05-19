@@ -78,6 +78,7 @@ The RSpec tests in this repo stubbed everything away and only check for correct 
 
 ## Roadmap
   - More docs
+  - Better logging solution
   - Less dependency on Rails (best would be a complete separated Rails mode)
   - Add support for delayed messages (like delayed_job's `run_at` method)
 
