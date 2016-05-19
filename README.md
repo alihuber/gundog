@@ -64,7 +64,7 @@ class MyWorker < Gundog::ApplicationWorker
 end
 ```
 This gives you a couple of methods and instance variables:  
-You can use any record finding or instance variable setting in the `setup` method. Everything inside the call method will be run asynchronously. To disable wrapping the contents of the call method in a database transaction call the `disable_transaction!` class method.  
+You can use any record finding or instance variable setting in the `setup` method. Everything inside the `call` method will be run asynchronously. To disable wrapping the contents of the `call` method in a database transaction invoke the `disable_transaction!` class method.  
 Every worker class has a instance variable called `json` by default which contains the deserialized payload of the message to be processed.  
 Every worker can publish messages via the `publish_to(queue_name, data)` method. The data will automatically be serialized.  
 
