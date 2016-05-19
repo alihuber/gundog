@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
 
   spec.summary       = %q{Lightweight Ruby & RabbitMQ background worker framework}
   spec.description   = "Ruby & RabbitMQ background worker framework "\
-                       "based on eventmachine and celluloid"
+                       "based on bunny, serverengine and celluloid"
   spec.homepage      = "https://github.com/alihuber/gundog"
   spec.license       = "MIT"
 

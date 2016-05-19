@@ -1,12 +1,17 @@
 # Gundog
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/gundog`. To experiment with that code, run `bin/console` for an interactive prompt.
+Lightweight background processor framework for RabbitMQ & Rails applications, based on [bunny](http://rubybunny.info), [serverengine](https://github.com/fluent/serverengine) and [celluloid](https://celluloid.io).
 
-TODO: Delete this and the text above, and describe your gem
+## Design goals
+  - Make all RabbitMQ-related stuff persistent/durable by default
+  - Small API, make queue naming etc. automatic
+  - Wrap any async actions in database transactions by default
+  - Take care of connection pool issues with ActiveRecord by default
+  - Use as less as possible internal RabbitMQ/Bunny APIs or headers
 
-## Installation
+## Installation & usage
 
-Add this line to your application's Gemfile:
+Add this line to your Rails application's Gemfile:
 
 ```ruby
 gem 'gundog'
@@ -16,26 +21,70 @@ And then execute:
 
     $ bundle
 
-Or install it yourself as:
 
-    $ gem install gundog
+In order to find your application's worker classes, create a file `config/workers.yml` with snake cased names of your worker classes, like this:  
+```yaml
+workers: &workers
+  - test_queue_worker
+  - concurrency_queue_worker
+  - republish_worker
 
-## Usage
+development:
+  workers: *workers
 
-TODO: Write usage instructions here
+test:
+  workers: *workers
 
-## Development
+production:
+  workers: *workers
+```
+Next, create a file `config/initializers/gundog.rb` with the following content, replace the URLs to where your RabbitMQ server is running:  
+```ruby
+Gundog.setup(amqp: "amqp://guest:guest@rabbitmq:5672", vhost: "/")
+```
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+TODO: list configuration options  
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+To create a worker, inherit your class from `Gundog::ApplicationWorker`.  
+```ruby
+class MyWorker < Gundog::ApplicationWorker
+
+  private
+
+  attr_reader :record, :important_data
+
+  def setup
+    @record         = MyModel.find_by(id: json["model_id"].to_i)
+    @important_data = MyCalcService.calc(@record)
+  end
+
+  def call
+    MyUpdateService.call(record, important_data)
+  end
+end
+```
+This gives you a couple of methods and instance variables:  
+You can use any record finding or instance variable setting in the `setup` method. Everything inside the call method will be run asynchronously. To disable wrapping the contents of the call method in a database transaction call the `disable_transaction!` class method.  
+Every worker class has a instance variable called `json` by default which contains the deserialized payload of the message to be processed.  
+Every worker can publish messages via the `publish_to(queue_name, data)` method. The data will automatically be serialized.  
+
+The rake task `gundog:run` will start the server, creating all necessary queues and exchanges.
+
+
+## Testing
+A complete application integrating gundog can be found under http://github.com/alihuber/worker_playground. Any serious testing is done here.  
+The RSpec tests in this repo stubbed everything away and only check for correct message passing.
+
+
+## Roadmap
+  - More docs
+  - Less dependency on Rails (best would be a complete separated Rails mode)
+  - Add support for delayed messages (like delayed_job's `run_at` method)
+
 
 ## Contributing
-
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/gundog.
+Bug reports and pull requests are welcome on GitHub at https://github.com/alihuber/gundog.
 
 
 ## License
-
 The gem is available as open source under the terms of the [MIT License](http://opensource.org/licenses/MIT).
-
