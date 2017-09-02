@@ -1,6 +1,9 @@
+require "logger"
+
 module Gundog
   class RetryWorker
     include Celluloid
+    include Celluloid::Internals::Logger
 
     def initialize(timeout, max_retry)
       @timeout   = timeout
@@ -17,16 +20,16 @@ module Gundog
     def check_max_times(args, metadata, delivery_info, channel)
       queue_name = delivery_info[:routing_key].gsub("_retry", "")
       if metadata[:headers]["retry_count"] > @max_retry
-        puts "#{Time.zone.now.to_s}  *** Moving #{args} into "\
-          "#{queue_name}_error queue after #{@max_retry} times ***"
+        info("Moving %p into %p error queue after %p retries" %
+             [args, queue_name, @max_retry])
         Gundog::Publisher.new.publish(args, to_queue: "#{queue_name}_error")
         # requeue automatically = false
         channel.reject(delivery_info.delivery_tag, false)
         self.terminate
       else
         count = metadata[:headers]["retry_count"]
-        puts "#{Time.zone.now.to_s}  *** Publishing #{args} into #{queue_name} "\
-          "after #{@timeout} seconds for the #{count}. time ***"
+        info("Publishing %p to %p after %p seconds for the %p. time" %
+             [args, queue_name, @timeout, count])
         Gundog::Publisher.new.publish(args, to_queue: queue_name,
                                       headers: {retry_count: count + 1})
         channel.acknowledge(delivery_info.delivery_tag, false)

@@ -3,6 +3,7 @@ require "gundog/dispatcher"
 require "gundog/retry_worker"
 require "gundog/runner"
 require "net/ping"
+require "logger"
 
 task :environment
 
@@ -21,7 +22,8 @@ namespace :gundog do
     if workers.any? && connection_up?(URI(Gundog.setup[:amqp]))
       Gundog::Runner.new(workers)
     else
-      puts "No worker names given or target server not reachable, aborting..."
+      Logger.new(STDOUT).warn(
+        "No worker names given or target server not reachable, aborting...")
     end
   end
 

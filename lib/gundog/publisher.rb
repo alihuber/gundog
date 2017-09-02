@@ -1,8 +1,11 @@
+require "logger"
+
 module Gundog
   class Publisher
     def initialize(options = {})
       @mutex   = Mutex.new
       @config  = Gundog::CONFIG.options.merge(options)
+      @logger  = Logger.new(STDOUT)
     end
 
     def publish(message, options = {})
@@ -13,12 +16,12 @@ module Gundog
       if connected?
         to_queue = @config.delete(:to_queue)
         @config[:routing_key] ||= to_queue
-        puts "#{Time.zone.now.to_s}  "\
-          "publishing #{message} to queue #{@config[:routing_key]}"
+        @logger.info(
+          "Publishing %p to queue %p" % [message, @config[:routing_key]])
         @exchange.publish(message, @config)
         @connection.close
       else
-        puts "Unable to publish message #{message}, aborting..."
+        @logger.warn("Unable to publish %p, aborting..." % message)
       end
     end
 
@@ -31,8 +34,8 @@ module Gundog
       begin
         @connection.start
       rescue Bunny::TCPConnectionFailed => e
-        puts "Error: cannot establish Bunny AMQP connection!"
-        puts e
+        @logger.warn("Error: cannot establish Bunny AMQP connection!")
+        @logger.warn(e)
         return
       end
       @channel  = @connection.create_channel

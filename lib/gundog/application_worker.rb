@@ -1,6 +1,9 @@
+require "logger"
+
 module Gundog
   class ApplicationWorker
     include Celluloid
+    include Celluloid::Internals::Logger
 
     def self.disable_transaction!
       define_method :in_transaction? do
@@ -11,7 +14,7 @@ module Gundog
     attr_reader :json
 
     def work(args = "{}", metadata, delivery_info, channel)
-      log_start(args)
+      info("START #{self.class.name} with %p" % args)
 
       begin
         parse!(args)
@@ -30,7 +33,7 @@ module Gundog
         # 'Should all unacknowledged messages up to this be acknowledged as well?'
         # = false
         channel.acknowledge(delivery_info.delivery_tag, false)
-        log_exception(ex)
+        warn("EXCEPTION #{self.class.name} \n#{ex.message} \n#{ex.backtrace}")
         queue_name = delivery_info.routing_key + "_retry"
         # messages sent by RabbitMQ-UI will add metadata =
         # {:headers=>{}, :delivery_mode=>1}
@@ -46,27 +49,12 @@ module Gundog
       end
 
       channel.acknowledge(delivery_info.delivery_tag, false)
-      log_success
+      info("SUCCESS #{self.class.name}")
       self.terminate
     end
 
 
     private
-
-    def log_exception(ex)
-      puts "#{Time.zone.now.to_s}  *** EXCEPTION #{self.class.name} ***"
-      puts('=' * 80)
-      puts ex.message
-      puts ex.backtrace
-    end
-
-    def log_start(args)
-      puts "#{Time.zone.now.to_s}  *** START #{self.class.name} with #{args} ***"
-    end
-
-    def log_success
-      puts "#{Time.zone.now.to_s}  *** SUCCESS #{self.class.name} ***"
-    end
 
     def parse!(args)
       @json = ActiveSupport::JSON.decode(args)

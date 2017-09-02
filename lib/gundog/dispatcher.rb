@@ -1,3 +1,5 @@
+require "logger"
+
 module Gundog
   module Dispatcher
 
@@ -5,6 +7,7 @@ module Gundog
       @stop_flag = ServerEngine::BlockingFlag.new
       # config == implicit serverengine options with merged in gundog options
       @config    = config
+      @logger    = Logger.new(STDOUT)
     end
 
     def run
@@ -18,8 +21,7 @@ module Gundog
 
         connection       = Bunny.new(@config[:amqp], vhost: @config[:vhost],
                                      heartbeat: @config[:heartbeat])
-        puts "#{Time.zone.now.to_s}  starting #{connection.inspect} "\
-          "for #{worker_name}"
+        @logger.info("Starting %p for %p" % [connection, worker_name])
 
         begin
           connection.start
@@ -74,9 +76,10 @@ module Gundog
           off_work_consumer.cancel
           off_retry_consumer.cancel
         rescue Exception => e
-          puts "BUNNY EXCEPTION: #{e.message}"
-          puts "Please make sure queues are "\
-            "empty and delete them manually if necessary."
+          @logger.warn("BUNNY EXCEPTION: #{e.message}")
+          @logger.warn(
+            "Please make sure queues are empty and delete them manually if necessary."
+          )
           parent_process_pid = %x{ps -p #{Process.pid} -o ppid=}.strip
           Process.kill "TERM", parent_process_pid.to_i
         end

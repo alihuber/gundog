@@ -107,7 +107,6 @@ A complete application integrating gundog can be found under http://github.com/a
 The RSpec tests in this repo stubbed everything away and only check for correct message passing.
 
 ## Roadmap
-  - Better logging solution
   - Standalone version for usage outside of Rails
   - Add support for delayed messages (like delayed_job's `run_at` method)
 

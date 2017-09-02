@@ -1,3 +1,5 @@
+require "logger"
+
 module Gundog
   class Runner
 
@@ -11,7 +13,8 @@ module Gundog
         worker_names: worker_names]
       setup =  serverengine_config.merge(options)
 
-      puts "Starting message dispatching for workers: #{worker_names}"
+      Logger.new(STDOUT).info(
+        "Starting message dispatching for workers: #{worker_names}")
       se = ServerEngine.create(nil, Gundog::Dispatcher, setup)
       se.run
     end
