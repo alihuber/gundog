@@ -6,21 +6,20 @@ describe Gundog::Dispatcher do
 
   # Dispatcher is a module started by serverengine, has to be included
 
-  let(:config)        { Hash[:worker_names=>["queue_1_worker",
+  let!(:dispatcher)   { DispatcherClass.new }
+  let!(:config)       { Hash[:worker_names=>["queue_1_worker",
                                              "queue_2_workflow"],
-                             :options=>
-                               {:heartbeat=>2,
-                               :exchange=>"gundog",
-                               :prefetch=>100,
-                               :retry_timeout=>10,
-                               :max_retry=>3,
-                               :exchange_options=>
-                               {:type=>:direct, :durable=>true,
-                                :auto_delete=>false},
-                               :queue_options=>
-                               {:exclusive=>false, :ack=>true, :durable=>true}}]
+                             :heartbeat=>2,
+                             :exchange=>"gundog",
+                             :prefetch=>100,
+                             :retry_timeout=>10,
+                             :max_retry=>3,
+                             :exchange_options=> {:type=>:direct, :durable=>true,
+                                                  :auto_delete=>false},
+                             :queue_options=> {:exclusive=>false, :ack=>true,
+                                               :durable=>true}
+                            ].merge(dispatcher.config)
   }
-  let(:dispatcher)    { DispatcherClass.new }
   let(:queue_1)       { double("Queue1") }
   let(:queue_2)       { double("Queue2") }
   let(:retry_queue_1) { double("RetryQueue1") }
@@ -33,7 +32,7 @@ describe Gundog::Dispatcher do
   subject { dispatcher.run }
 
   before do
-    allow(dispatcher).to receive(:config).and_return(config)
+    dispatcher.instance_variable_set("@config", config)
     allow(dispatcher).to receive(:stop_flag).and_return false
     allow_any_instance_of(ServerEngine::BlockingFlag)
       .to receive(:wait_for_set).and_return ServerEngine::BlockingFlag.new.set!

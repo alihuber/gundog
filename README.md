@@ -38,14 +38,45 @@ test:
 production:
   workers: *workers
 ```
+This will automatically create 3 RabbitMQ queues for each worker: The actual worker queue, a retry queue and an error queue. They will be named according to the worker name, suffixed with "_queue". Not deliverable messages will be transfered to the "_retry"-queue, re-enqueued after the configured time span has passed and end up in the "_error"-queue after the configured retry count.
+
 Next, create a file `config/initializers/gundog.rb` with the following content, replace the URLs to where your RabbitMQ server is running:  
 ```ruby
 Gundog.setup(amqp: "amqp://guest:guest@rabbitmq:5672", vhost: "/")
 ```
+The setup parameter hash can hold the following options, these are the default settings:
+```ruby
+{
+ ## options regarding AMQP and bunny
+ # 2 seconds hartbeat for connection
+ heartbeat:   2,
+ # name of the generated exchange 
+ exchange:    "gundog",
+ # how many messages should any consumer fetch from the queue?
+ prefetch:    100,
 
-TODO: list configuration options  
+ ## options regarding retry/requeue behaviour
+ # seconds to wait before attempting re-enqueue
+ retry_timeout: 10,
+ # how often should the message be re-enqueued?
+ max_retry: 3,
 
-To create a worker, inherit your class from `Gundog::ApplicationWorker`.  
+ ## options regarding serverengine
+ # should the process be daemonized?
+ daemonize: false,
+ # if daemonized: path to process id file
+ pid_path: "gundog.pid",
+ # path to log file or stdout
+ log: STDOUT,
+ # number of serverengine process workers
+ workers: 1,
+
+ ## options regarding AMQP exchange and queue settings
+ exchange_options: { type: :direct, durable: true, auto_delete: false },
+ queue_options: { exclusive: false, ack: true, durable: true } }
+```
+
+To create a worker, inherit your class from `Gundog::ApplicationWorker`.
 ```ruby
 class MyWorker < Gundog::ApplicationWorker
 
@@ -75,11 +106,9 @@ The rake task `gundog:run` will start the server, creating all necessary queues 
 A complete application integrating gundog can be found under http://github.com/alihuber/worker_playground. Any serious testing is done here.  
 The RSpec tests in this repo stubbed everything away and only check for correct message passing.
 
-
 ## Roadmap
-  - More docs
   - Better logging solution
-  - Less dependency on Rails (best would be a complete separated Rails mode)
+  - Standalone version for usage outside of Rails
   - Add support for delayed messages (like delayed_job's `run_at` method)
 
 

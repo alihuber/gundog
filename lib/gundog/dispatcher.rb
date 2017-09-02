@@ -3,32 +3,33 @@ module Gundog
 
     def initialize
       @stop_flag = ServerEngine::BlockingFlag.new
+      # config == implicit serverengine options with merged in gundog options
+      @config    = config
     end
 
     def run
-      worker_names = config[:worker_names]
-      options      = config[:options]
-      ack          = options[:queue_options][:ack]
+      worker_names = @config[:worker_names]
+      ack          = @config[:queue_options][:ack]
 
       worker_names.each do |worker_name|
         queue_name       = worker_name + "_queue"
         retry_queue_name = queue_name + "_retry"
         error_queue_name = queue_name + "_error"
 
-        connection       = Bunny.new(options[:amqp], vhost: options[:vhost],
-                                     heartbeat: options[:heartbeat])
+        connection       = Bunny.new(@config[:amqp], vhost: @config[:vhost],
+                                     heartbeat: @config[:heartbeat])
         puts "#{Time.zone.now.to_s}  starting #{connection.inspect} "\
           "for #{worker_name}"
 
         begin
           connection.start
           channel            = connection.create_channel
-          channel.prefetch(options[:prefetch])
+          channel.prefetch(@config[:prefetch])
           exchange           =
-            channel.exchange(options[:exchange], options[:exchange_options])
+            channel.exchange(@config[:exchange], @config[:exchange_options])
 
 
-          worker_queue       = channel.queue(queue_name, options[:queue_options])
+          worker_queue       = channel.queue(queue_name, @config[:queue_options])
           worker_queue.bind(exchange, :routing_key => queue_name)
           # build long lived consumer to listen on deliveries
           # channel, queue, comsumer_tag, no_ack, exclusive, opts
@@ -48,7 +49,7 @@ module Gundog
 
 
           retry_queue        =
-            channel.queue(retry_queue_name, options[:queue_options])
+            channel.queue(retry_queue_name, @config[:queue_options])
           retry_queue.bind(exchange, :routing_key => retry_queue_name)
           retry_consumer     =
             build_consumer_class.new(channel, retry_queue,
@@ -61,13 +62,13 @@ module Gundog
           retry_queue.subscribe_with(retry_consumer)
           retry_consumer.on_delivery() do |delivery_info, metadata, payload|
             retry_actor      =
-              Gundog::RetryWorker.new(options[:retry_timeout],
-                                      options[:max_retry])
+              Gundog::RetryWorker.new(@config[:retry_timeout],
+                                      @config[:max_retry])
             retry_actor.async.call(payload, metadata, delivery_info, channel)
           end
 
           error_queue        =
-            channel.queue(error_queue_name, options[:queue_options])
+            channel.queue(error_queue_name, @config[:queue_options])
           error_queue.bind(exchange, :routing_key => error_queue_name)
 
           off_work_consumer.cancel

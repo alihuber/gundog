@@ -1,21 +1,21 @@
 module Gundog
   class Publisher
     def initialize(options = {})
-      @mutex          = Mutex.new
-      @configuration  = Gundog::CONFIG.options.merge(options)
+      @mutex   = Mutex.new
+      @config  = Gundog::CONFIG.options.merge(options)
     end
 
     def publish(message, options = {})
-      @configuration.merge!(options)
+      @config.merge!(options)
       @mutex.synchronize do
         ensure_connection! unless connected?
       end
       if connected?
-        to_queue = @configuration.delete(:to_queue)
-        @configuration[:routing_key] ||= to_queue
+        to_queue = @config.delete(:to_queue)
+        @config[:routing_key] ||= to_queue
         puts "#{Time.zone.now.to_s}  "\
-          "publishing #{message} to queue #{@configuration[:routing_key]}"
-        @exchange.publish(message, @configuration)
+          "publishing #{message} to queue #{@config[:routing_key]}"
+        @exchange.publish(message, @config)
         @connection.close
       else
         puts "Unable to publish message #{message}, aborting..."
@@ -26,7 +26,7 @@ module Gundog
 
     private
     def ensure_connection!
-      @connection  = @configuration[:connection]
+      @connection  = @config[:connection]
       @connection  ||= create_connection
       begin
         @connection.start
@@ -36,8 +36,8 @@ module Gundog
         return
       end
       @channel  = @connection.create_channel
-      @exchange = @channel.exchange(@configuration[:exchange],
-                                    @configuration[:exchange_options])
+      @exchange =
+        @channel.exchange(@config[:exchange], @config[:exchange_options])
     end
 
     def connected?
@@ -45,8 +45,8 @@ module Gundog
     end
 
     def create_connection
-      Bunny.new(@configuration[:amqp], vhost: @configuration[:vhost],
-                heartbeat: @configuration[:heartbeat])
+      Bunny.new(@config[:amqp], vhost: @config[:vhost],
+                heartbeat: @config[:heartbeat])
     end
   end
 end
