@@ -2,16 +2,19 @@ shared_context :bunny_connection do
   let!(:channel)    { double("Channel") }
   let!(:publisher)  { instance_double ::Gundog::Publisher }
   let!(:exchange)   { double("Exchange") }
-  let!(:bunny_mock) { double(::Bunny.new) }
+  let!(:connection) { double("Connection") }
+  let!(:bunny_mock) { double("Bunny") }
 
   before do
     allow_message_expectations_on_nil
-    bunny_mock = nil
     allow(publisher).to receive(:publish)
-    allow(Bunny).to receive(:new).and_return bunny_mock
+    allow(Bunny).to receive(:new)
+      .with(nil, {:vhost=>nil, :heartbeat=>2})
+      .and_return bunny_mock
     allow(bunny_mock).to receive(:start).and_return true
     allow(bunny_mock).to receive(:close)
     allow(bunny_mock).to receive(:create_channel).and_return channel
+    allow(bunny_mock).to receive(:connected?).and_return true
 
     allow(channel).to receive(:acknowledge)
     allow(channel).to receive(:prefetch)

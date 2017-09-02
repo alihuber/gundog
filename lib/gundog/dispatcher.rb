@@ -72,10 +72,10 @@ module Gundog
 
           off_work_consumer.cancel
           off_retry_consumer.cancel
-        rescue Bunny::PreconditionFailed, Bunny::ChannelAlreadyClosed => e
+        rescue Exception => e
           puts "BUNNY EXCEPTION: #{e.message}"
           puts "Please make sure queues are "\
-               "empty and delete them manually if necessary."
+            "empty and delete them manually if necessary."
           parent_process_pid = %x{ps -p #{Process.pid} -o ppid=}.strip
           Process.kill "TERM", parent_process_pid.to_i
         end
