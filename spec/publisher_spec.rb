@@ -13,14 +13,14 @@ describe Gundog::Publisher do
   before do
     allow_message_expectations_on_nil
     allow(Bunny).to receive(:new)
-      .with(nil, {:vhost=>nil, :heartbeat=>2})
+      .with(nil, {vhost: nil, heartbeat: 2})
       .and_return bunny_mock
     allow(bunny_mock).to receive(:start).and_return true
     allow(bunny_mock).to receive(:close)
     allow(bunny_mock).to receive(:create_channel).and_return channel
     allow(bunny_mock).to receive(:connected?).and_return true
     allow(channel).to receive(:exchange)
-      .with("gundog", {:type=>:direct, :durable=>true, :auto_delete=>false})
+      .with("gundog", {type: :direct, durable: true, auto_delete: false})
       .and_return(exchange)
     allow(Time).to receive(:zone)
       .and_return(ActiveSupport::TimeZone.new("Europe/Berlin"))
@@ -31,14 +31,14 @@ describe Gundog::Publisher do
     subject
 
     expect(exchange).to have_received(:publish)
-      .with("\"bar\"", {:heartbeat=>2, :exchange=>"gundog",
-                        :prefetch=>100, :retry_timeout=>10, :max_retry=>3,
-                        :workers=>1, :daemonize=>false, :log=>STDOUT,
-                        :pid_path=>"gundog.pid",
-                        :exchange_options=>{:type=>:direct, :durable=>true,
-                                            :auto_delete=>false},
-                        :queue_options=>{:exclusive=>false, :ack=>true,
-                                          :durable=>true},
-                        :routing_key=>nil})
+      .with("\"bar\"", {heartbeat: 2, exchange: "gundog",
+                        prefetch: 100, retry_timeout: 10, max_retry: 3,
+                        workers: 1, daemonize: false, log: STDOUT,
+                        pid_path: "gundog.pid",
+                        exchange_options: {type: :direct, durable: true,
+                                           auto_delete: false},
+                        queue_options: {exclusive: false, ack: true,
+                                        durable: true},
+                        routing_key: nil})
   end
 end

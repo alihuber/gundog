@@ -15,7 +15,6 @@ module Gundog
 
     def work(args = "{}", metadata, delivery_info, channel)
       info("START #{self.class.name} with %p" % args)
-
       begin
         parse!(args)
         ActiveRecord::Base.connection_pool.with_connection do
@@ -30,20 +29,7 @@ module Gundog
           end
         end
       rescue Exception => ex
-        # 'Should all unacknowledged messages up to this be acknowledged as well?'
-        # = false
-        channel.acknowledge(delivery_info.delivery_tag, false)
-        warn("EXCEPTION #{self.class.name} \n#{ex.message} \n#{ex.backtrace}")
-        queue_name = delivery_info.routing_key + "_retry"
-        # messages sent by RabbitMQ-UI will add metadata =
-        # {:headers=>{}, :delivery_mode=>1}
-        if metadata[:headers]&.any?
-          Gundog::Publisher.new
-            .publish(args, to_queue: queue_name, headers: metadata[:headers])
-        else
-          Gundog::Publisher.new.publish(args, to_queue: queue_name,
-                                        headers: {retry_count: 1})
-        end
+        handle_retry_or_error(args, metadata, delivery_info, channel, ex)
         self.terminate
         return
       end
@@ -55,6 +41,23 @@ module Gundog
 
 
     private
+
+    def handle_retry_or_error(args, metadata, delivery_info, channel, ex)
+      # 'Should all unacknowledged messages up to this be acknowledged as well?'
+      # = false
+      channel.acknowledge(delivery_info.delivery_tag, false)
+      warn("EXCEPTION #{self.class.name} \n#{ex.message} \n#{ex.backtrace}")
+      queue_name = delivery_info.routing_key + "_retry"
+      # messages sent by RabbitMQ-UI will add metadata =
+      # {:headers=>{}, :delivery_mode=>1}
+      if metadata[:headers]&.any?
+        Gundog::Publisher.new
+          .publish(args, to_queue: queue_name, headers: metadata[:headers])
+      else
+        Gundog::Publisher.new.publish(args, to_queue: queue_name,
+                                      headers: {retry_count: 1})
+      end
+    end
 
     def parse!(args)
       @json = ActiveSupport::JSON.decode(args)

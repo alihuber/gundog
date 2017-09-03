@@ -9,7 +9,7 @@ shared_context :bunny_connection do
     allow_message_expectations_on_nil
     allow(publisher).to receive(:publish)
     allow(Bunny).to receive(:new)
-      .with(nil, {:vhost=>nil, :heartbeat=>2})
+      .with(nil, {vhost: nil, heartbeat: 2})
       .and_return bunny_mock
     allow(bunny_mock).to receive(:start).and_return true
     allow(bunny_mock).to receive(:close)
@@ -20,7 +20,7 @@ shared_context :bunny_connection do
     allow(channel).to receive(:prefetch)
     allow(channel).to receive(:reject)
     allow(channel).to receive(:exchange)
-      .with("gundog", {:type=>:direct, :durable=>true, :auto_delete=>false})
+      .with("gundog", {type: :direct, durable: true, auto_delete: false})
       .and_return(exchange)
     allow(exchange).to receive(:publish)
     allow(channel).to receive(:number)

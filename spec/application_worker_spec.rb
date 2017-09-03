@@ -7,18 +7,18 @@ describe Gundog::ApplicationWorker do
   # ApplicationWorker is never used directly, subclassed
 
   let(:work_actor)     { TestQueueWorker.new }
-  let(:metadata)       { Hash[:content_type=>"application/octet-stream",
-                              :delivery_mode=>2,
-                              :priority=>0] }
-  let(:retry_metadata) { Hash[:content_type=>"application/octet-stream",
-                              :delivery_mode=>2,
-                              :headers=>{:retry_count=>2},
-                              :priority=>0] }
+  let(:metadata)       { Hash[content_type: "application/octet-stream",
+                              delivery_mode: 2,
+                              priority: 0] }
+  let(:retry_metadata) { Hash[content_type: "application/octet-stream",
+                              delivery_mode: 2,
+                              headers: {retry_count: 2},
+                              priority: 0] }
   let(:delivery_info)  {
     OpenStruct.new(consumer_tag: "amq.ctag-ATWR0yHmT_c8A",
                    routing_key: "test_worker_queue",
-                   delivery_tag:  {:exchange=>"gundog",
-                                   :routing_key=>"test_worker_queue"}) }
+                   delivery_tag:  {exchange: "gundog",
+                                   routing_key: "test_worker_queue"}) }
 
   context "call is successful" do
     subject { work_actor.work("foo".to_json, metadata, delivery_info, channel) }
@@ -49,16 +49,16 @@ describe Gundog::ApplicationWorker do
       subject
 
       expect(exchange).to have_received(:publish)
-        .with("\"2\"", {:heartbeat=>2, :exchange=>"gundog",
-                        :prefetch=>100, :retry_timeout=>10, :max_retry=>3,
-                        :workers=>1, :daemonize=>false, :log=>STDOUT,
-                        :pid_path=>"gundog.pid",
-                        :exchange_options=>{:type=>:direct, :durable=>true,
-                                            :auto_delete=>false},
-                        :queue_options=>{:exclusive=>false, :ack=>true,
-                                         :durable=>true},
-                        :headers=>{:retry_count=>1},
-                        :routing_key=>"test_worker_queue_retry"})
+        .with("\"2\"", {heartbeat: 2, exchange: "gundog",
+                        prefetch: 100, retry_timeout: 10, max_retry: 3,
+                        workers: 1, daemonize: false, log: STDOUT,
+                        pid_path: "gundog.pid",
+                        exchange_options: {type: :direct, durable: true,
+                                           auto_delete: false},
+                        queue_options: {exclusive: false, ack: true,
+                                        durable: true},
+                        headers: {retry_count: 1},
+                        routing_key: "test_worker_queue_retry"})
     end
 
     # successful or not, the message is acknowledged and published to retry
@@ -79,16 +79,16 @@ describe Gundog::ApplicationWorker do
       subject
 
       expect(exchange).to have_received(:publish)
-        .with("\"2\"", {:heartbeat=>2, :exchange=>"gundog",
-                        :prefetch=>100, :retry_timeout=>10, :max_retry=>3,
-                        :workers=>1, :daemonize=>false, :log=>STDOUT,
-                        :pid_path=>"gundog.pid",
-                        :exchange_options=>{:type=>:direct, :durable=>true,
-                                            :auto_delete=>false},
-                        :queue_options=>{:exclusive=>false, :ack=>true,
-                                         :durable=>true},
-                        :headers=>{:retry_count=>1},
-                        :routing_key=>"test_worker_queue_retry"})
+        .with("\"2\"", {heartbeat: 2, exchange: "gundog",
+                        prefetch: 100, retry_timeout: 10, max_retry: 3,
+                        workers: 1, daemonize: false, log: STDOUT,
+                        pid_path: "gundog.pid",
+                        exchange_options: {type: :direct, durable: true,
+                                            auto_delete: false},
+                        queue_options: {exclusive: false, ack: true,
+                                        durable: true},
+                        headers: {retry_count: 1},
+                        routing_key: "test_worker_queue_retry"})
     end
 
     # successful or not, the message is acknowledged and published to retry
@@ -108,16 +108,16 @@ describe Gundog::ApplicationWorker do
       subject
 
       expect(exchange).to have_received(:publish)
-        .with("\"2\"", {:heartbeat=>2, :exchange=>"gundog",
-                        :prefetch=>100, :retry_timeout=>10, :max_retry=>3,
-                        :workers=>1, :daemonize=>false, :log=>STDOUT,
-                        :pid_path=>"gundog.pid",
-                        :exchange_options=>{:type=>:direct, :durable=>true,
-                                            :auto_delete=>false},
-                        :queue_options=>{:exclusive=>false, :ack=>true,
-                                         :durable=>true},
-                        :headers=>{:retry_count=>2},
-                        :routing_key=>"test_worker_queue_retry"})
+        .with("\"2\"", {heartbeat: 2, exchange: "gundog",
+                        prefetch: 100, retry_timeout: 10, max_retry: 3,
+                        workers: 1, daemonize: false, log: STDOUT,
+                        pid_path: "gundog.pid",
+                        exchange_options: {type: :direct, durable: true,
+                                           auto_delete: false},
+                        queue_options: {exclusive: false, ack: true,
+                                        durable: true},
+                        headers: {retry_count: 2},
+                        routing_key: "test_worker_queue_retry"})
     end
 
     # successful or not, the message is acknowledged and published to retry

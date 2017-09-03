@@ -30,44 +30,11 @@ module Gundog
           exchange           =
             channel.exchange(@config[:exchange], @config[:exchange_options])
 
+          off_work_consumer  =
+            build_worker_queue(ack, channel, exchange, queue_name, worker_name)
 
-          worker_queue       = channel.queue(queue_name, @config[:queue_options])
-          worker_queue.bind(exchange, :routing_key => queue_name)
-          # build long lived consumer to listen on deliveries
-          # channel, queue, comsumer_tag, no_ack, exclusive, opts
-          work_consumer      = build_consumer_class
-            .new(channel, worker_queue, "#{queue_name}-consumer", false)
-          # subscribe ephemeral consumer to work off piled up messages
-          off_work_consumer  = worker_queue
-            .subscribe(block: false, manual_ack: ack) do |info, meta, message|
-            work_actor       = worker_name.camelize.constantize.new
-            work_actor.async.work(message, meta, info, channel)
-          end
-          worker_queue.subscribe_with(work_consumer)
-          work_consumer.on_delivery() do |delivery_info, metadata, payload|
-            work_actor       = worker_name.camelize.constantize.new
-            work_actor.async.work(payload, metadata, delivery_info, channel)
-          end
-
-
-          retry_queue        =
-            channel.queue(retry_queue_name, @config[:queue_options])
-          retry_queue.bind(exchange, :routing_key => retry_queue_name)
-          retry_consumer     =
-            build_consumer_class.new(channel, retry_queue,
-                                     "#{retry_queue_name}-consumer", false)
-          off_retry_consumer = retry_queue
-            .subscribe(block: false, manual_ack: ack) do |info, meta, message|
-            retry_actor      = worker_name.camelize.constantize.new
-            retry_actor.async.work(message, meta, info, channel)
-          end
-          retry_queue.subscribe_with(retry_consumer)
-          retry_consumer.on_delivery() do |delivery_info, metadata, payload|
-            retry_actor      =
-              Gundog::RetryWorker.new(@config[:retry_timeout],
-                                      @config[:max_retry])
-            retry_actor.async.call(payload, metadata, delivery_info, channel)
-          end
+          off_retry_consumer = build_retry_queue(ack, channel, exchange,
+                                                 retry_queue_name, worker_name)
 
           error_queue        =
             channel.queue(error_queue_name, @config[:queue_options])
@@ -89,6 +56,11 @@ module Gundog
       end
     end
 
+    def stop
+      @stop_flag.set!
+    end
+
+    private
     def build_consumer_class
       Class.new(Bunny::Consumer) do
         def cancelled?
@@ -101,8 +73,48 @@ module Gundog
       end
     end
 
-    def stop
-      @stop_flag.set!
+    def build_worker_queue(ack, channel, exchange, queue_name, worker_name)
+      worker_queue  = channel.queue(queue_name, @config[:queue_options])
+      worker_queue.bind(exchange, routing_key: queue_name)
+      # build long lived consumer to listen on deliveries
+      # channel, queue, comsumer_tag, no_ack, exclusive, opts
+      work_consumer = build_consumer_class
+        .new(channel, worker_queue, "#{queue_name}-consumer", false)
+      # subscribe ephemeral consumer to work off piled up messages
+      off_work_consumer  = worker_queue
+        .subscribe(block: false, manual_ack: ack) do |info, meta, message|
+        work_actor = worker_name.camelize.constantize.new
+        work_actor.async.work(message, meta, info, channel)
+      end
+      worker_queue.subscribe_with(work_consumer)
+      work_consumer.on_delivery() do |delivery_info, metadata, payload|
+        work_actor = worker_name.camelize.constantize.new
+        work_actor.async.work(payload, metadata, delivery_info, channel)
+      end
+      off_work_consumer
     end
+
+    def build_retry_queue(ack, channel, exchange, retry_queue_name, worker_name)
+      retry_queue        =
+        channel.queue(retry_queue_name, @config[:queue_options])
+      retry_queue.bind(exchange, :routing_key => retry_queue_name)
+      retry_consumer     =
+        build_consumer_class.new(channel, retry_queue,
+                                  "#{retry_queue_name}-consumer", false)
+      off_retry_consumer = retry_queue
+        .subscribe(block: false, manual_ack: ack) do |info, meta, message|
+        retry_actor      = worker_name.camelize.constantize.new
+        retry_actor.async.work(message, meta, info, channel)
+      end
+      retry_queue.subscribe_with(retry_consumer)
+      retry_consumer.on_delivery() do |delivery_info, metadata, payload|
+        retry_actor      =
+          Gundog::RetryWorker.new(@config[:retry_timeout],
+                                  @config[:max_retry])
+        retry_actor.async.call(payload, metadata, delivery_info, channel)
+      end
+      off_retry_consumer
+    end
+
   end
 end

@@ -7,17 +7,17 @@ describe Gundog::ApplicationWorker do
   # ApplicationWorker is never used directly, subclassed
 
   let(:work_actor)     { TransactionlessWorker.new }
-  let(:metadata)       { Hash[:content_type=>"application/octet-stream",
-                              :delivery_mode=>2,
-                              :priority=>0] }
-  let(:retry_metadata) { Hash[:content_type=>"application/octet-stream",
-                              :delivery_mode=>2,
-                              :headers=>{:retry_count=>2},
-                              :priority=>0] }
+  let(:metadata)       { Hash[content_type: "application/octet-stream",
+                              delivery_mode: 2,
+                              priority: 0] }
+  let(:retry_metadata) { Hash[content_type: "application/octet-stream",
+                              delivery_mode: 2,
+                              headers: {retry_count: 2},
+                              priority: 0] }
   let(:delivery_info)  {
     OpenStruct.new(consumer_tag: "amq.ctag-ATWR0yHmT_c8A",
-                   delivery_tag:  {:exchange=>"gundog",
-                                   :routing_key=>"test_queue"}) }
+                   delivery_tag: {exchange: "gundog",
+                                  routing_key: "test_queue"}) }
 
   context "call is successful" do
     subject { work_actor.work("foo".to_json, metadata, delivery_info, channel) }
