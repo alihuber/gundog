@@ -18,9 +18,6 @@ describe Gundog::RetryWorker do
                    routing_key:  "test_queue_retry",
                    delivery_tag: {exchange: "gundog",
                                   routing_key: "test_queue_retry"}) }
-  before do
-    stub_const("Rails", "foo")
-  end
 
 
   context "max retry limit is not exceeded" do

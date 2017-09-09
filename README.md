@@ -9,9 +9,8 @@ Lightweight background processor framework for RabbitMQ & Rails applications, ba
   - Take care of connection pool issues with ActiveRecord by default
   - Use as less as possible internal RabbitMQ/Bunny APIs or headers
 
-## Installation & usage
-
-Add this line to your Rails application's Gemfile:
+## Installation
+Add this line to your application's Gemfile:
 
 ```ruby
 gem 'gundog'
@@ -21,7 +20,7 @@ And then execute:
 
     $ bundle
 
-
+## Usage with Rails
 In order to find your application's worker classes, create a file `config/workers.yml` with snake cased names of your worker classes, like this:  
 ```yaml
 workers: &workers
@@ -76,7 +75,7 @@ The setup parameter hash can hold the following options, these are the default s
  queue_options: { exclusive: false, ack: true, durable: true } }
 ```
 
-To create a worker, inherit your class from `Gundog::ApplicationWorker`.
+To create a worker, inherit from `Gundog::ApplicationWorker`.
 ```ruby
 class MyWorker < Gundog::ApplicationWorker
 
@@ -101,19 +100,37 @@ Every worker can publish messages via the `publish_to(queue_name, data)` method.
 
 The rake task `gundog:run` will start the server, creating all necessary queues and exchanges.
 
+## Publish messages programmatically
+It is possible to use the publisher elsewhere in your code, for example to publish data you received in a controller:
+```ruby
+Gundog::Publisher.new.publish(params["publish"].to_json,
+                              to_queue: "my_worker_queue")
+```
+This will enqueue a message for the configured worker with the corresponding name `my_worker`. Just make sure to send it as JSON and the queue name suits one of your workers described in `workers.yml`.
+
+## Standalone mode (experimental)
+To use gundog in a setting outside of Rails you can use the `gundog` executable. It currently has the following possibilities:
+```bash
+Usage: gundog --url [amqp_url] --vhost [vhost] --worker [worker_class_1,worker_class_n]
+    -w, --worker worker_1,worker_n   A comma-separated list of snake_cased worker files
+    -u, --url URL                    The AMQP connection URL
+    -v, --vhost VHOST                vhost, default: /
+    -h, --help                       Print this help screen
+```
+For example, the command
+`gundog -u amqp://user:password@192.168.0.10:5672 -v myvhost -w my_worker,../foo/my_other_worker`
+would take care of all the settings described above (queue generation etc.) for the workers `MyWorker` and `MyOtherWorker` (which again inherit from `ApplicationWorker`). Gundog would use them for message dispatching automatically.
+To actually publish messages you can just require the gundog gem, make sure you call the `setup` method with the connection URL like in the initializer code above in any global context and you can just start publishing messages, in above case for example into the `my_other_worker_queue`.
 
 ## Testing
 A complete application integrating gundog can be found under http://github.com/alihuber/worker_playground. Any serious testing is done here.  
 The RSpec tests in this repo stubbed everything away and only check for correct message passing.
 
 ## Roadmap
-  - Standalone version for usage outside of Rails
   - Add support for delayed messages (like delayed_job's `run_at` method)
-
 
 ## Contributing
 Bug reports and pull requests are welcome on GitHub at https://github.com/alihuber/gundog.
-
 
 ## License
 The gem is available as open source under the terms of the [MIT License](http://opensource.org/licenses/MIT).

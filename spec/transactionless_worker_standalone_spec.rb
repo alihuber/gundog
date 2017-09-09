@@ -18,9 +18,6 @@ describe Gundog::ApplicationWorker do
     OpenStruct.new(consumer_tag: "amq.ctag-ATWR0yHmT_c8A",
                    delivery_tag: {exchange: "gundog",
                                   routing_key: "test_queue"}) }
-  before do
-    stub_const("Rails", "foo")
-  end
 
   context "call is successful" do
     subject { work_actor.work("foo".to_json, metadata, delivery_info, channel) }

@@ -20,10 +20,6 @@ describe Gundog::ApplicationWorker do
                    delivery_tag: {exchange: "gundog",
                                    routing_key: "test_worker_queue"}) }
 
-  before do
-    stub_const("Rails", "foo")
-  end
-
   context "call is successful" do
     subject { work_actor.work("foo".to_json, metadata, delivery_info, channel) }
 
@@ -38,10 +34,10 @@ describe Gundog::ApplicationWorker do
         .to have_received(:acknowledge).with(delivery_info.delivery_tag, false)
     end
 
-    it "executes worker call in transaction" do
+    it "does not touch active record" do
       subject
 
-      expect(ActiveRecord::Base).to have_received(:transaction)
+      expect(ActiveRecord::Base).not_to have_received(:transaction)
     end
   end
 

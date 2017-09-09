@@ -1,4 +1,5 @@
 require "logger"
+require "json"
 
 module Gundog
   class ApplicationWorker
@@ -16,17 +17,10 @@ module Gundog
     def work(args = "{}", metadata, delivery_info, channel)
       info("START #{self.class.name} with %p" % args)
       begin
-        parse!(args)
-        ActiveRecord::Base.connection_pool.with_connection do
-          setup
-
-          if in_transaction?
-            ActiveRecord::Base.transaction do
-              call
-            end
-          else
-            call
-          end
+        if defined?(::Rails)
+          call_rails_mode(args)
+        else
+          call_standalone_mode(args)
         end
       rescue Exception => ex
         handle_retry_or_error(args, metadata, delivery_info, channel, ex)
@@ -41,6 +35,27 @@ module Gundog
 
 
     private
+
+    def call_standalone_mode(args)
+      parse!(args)
+      setup
+      call
+    end
+
+    def call_rails_mode(args)
+      parse!(args)
+      ActiveRecord::Base.connection_pool.with_connection do
+        setup
+
+        if in_transaction?
+          ActiveRecord::Base.transaction do
+            call
+          end
+        else
+          call
+        end
+      end
+    end
 
     def handle_retry_or_error(args, metadata, delivery_info, channel, ex)
       # 'Should all unacknowledged messages up to this be acknowledged as well?'
@@ -60,7 +75,11 @@ module Gundog
     end
 
     def parse!(args)
-      @json = ActiveSupport::JSON.decode(args)
+      if defined?(::Rails)
+        @json = ActiveSupport::JSON.decode(args)
+      else
+        @json = JSON.parse(args)
+      end
     end
 
     def setup

@@ -82,8 +82,6 @@ describe Gundog::Dispatcher do
     allow(retry_queue_2).to receive(:subscribe_with)
     allow(retry_queue_1).to receive(:subscribe).and_return(off_consumer)
     allow(retry_queue_2).to receive(:subscribe).and_return(off_consumer)
-
-    stub_const("Rails", "foo")
   end
 
 

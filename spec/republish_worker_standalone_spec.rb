@@ -14,10 +14,6 @@ describe Gundog::ApplicationWorker do
                    delivery_tag:  {exchange: "gundog",
                                    routing_key: "test_queue"}) }
 
-  before do
-    stub_const("Rails", "foo")
-  end
-
   subject { work_actor.work("foo".to_json, metadata, delivery_info, channel) }
 
   it "can publish arbitrary messages by itself" do

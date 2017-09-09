@@ -15,8 +15,6 @@ namespace :gundog do
     if defined?(::Rails)
       ::Rails.application.eager_load!
       workers = Rails.application.config_for(:workers)["workers"]
-    else
-      # TODO load setup for workers from elsewhere
     end
 
     if workers.any? && connection_up?(URI(Gundog.setup[:amqp]))

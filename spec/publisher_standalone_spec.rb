@@ -25,8 +25,6 @@ describe Gundog::Publisher do
     allow(Time).to receive(:zone)
       .and_return(ActiveSupport::TimeZone.new("Europe/Berlin"))
     allow(exchange).to receive(:publish)
-
-    stub_const("Rails", "foo")
   end
 
   it "publishes messages on the exchange object" do
